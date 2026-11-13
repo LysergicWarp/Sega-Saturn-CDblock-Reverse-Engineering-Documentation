@@ -1,0 +1,6 @@
+# Firmware and card ROM dumps, sector files, disc images and PRS streams, including those make.py,
+# prs.py and decompress.py write
+*.bin
+*.iso
+*.prs
+__pycache__/

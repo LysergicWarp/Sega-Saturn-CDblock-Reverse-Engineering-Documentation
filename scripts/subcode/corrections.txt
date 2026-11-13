@@ -1,0 +1,31 @@
+# Packs that task 2 corrects, and packs it fails.
+#
+#   python scripts/subcode/subcode.py cdb105.bin scripts/subcode/corrections.txt
+
+# One wrong symbol: both decoders correct it, result 1.
+pack 1
+error 9 15
+decode
+
+# Two wrong symbols: both decoders correct them, result 2.
+pack 3
+error 5 0a
+error 17 33
+decode
+
+# A wrong symbol 0, which both codes cover. P corrects it first, and Q then finds nothing.
+pack 4
+error 0 2c
+decode
+
+# Four errors whose syndromes look like one error past the pack, at alpha^30: both decoders fail
+# the pack, and the host sees the pack data error.
+pack 10
+past 30 05
+decode
+
+# Four errors with the syndromes of two errors past the pack, at alpha^30 and alpha^25. Their logs
+# add up to less than 63, so the shift finds them where they are, past the pack: result 80.
+pack 13
+past 30 05 25 11
+decode

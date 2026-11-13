@@ -1,0 +1,24 @@
+# Runs on xa.iso, one of the images make.py writes:
+#
+#   python scripts/directory/make.py
+#   python scripts/directory/directory.py xa.iso scripts/directory/xa-filter.txt
+
+# XADIR holds 300 files with XA fields, and its first file has file number 1. Read File leaves the
+# filter with mode 41 and that file number. Read Directory past the window does not set the filter
+# mode again, so the directory's sectors fail the filter and the read never ends.
+root
+cd 2
+read 2
+dir 290
+scope
+abort
+scope
+root
+
+# The same stuck read, ended by Change Directory to the root instead. 70 with ID ffffff is accepted
+# during the read, and its request takes the read's place.
+cd 2
+read 2
+dir 290
+root
+scope

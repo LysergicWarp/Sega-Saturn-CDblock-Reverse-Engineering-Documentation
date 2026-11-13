@@ -1,0 +1,13 @@
+# Four errors in a pack are more than the P code corrects. These four have the syndromes of two
+# errors at locators alpha^40 and alpha^35, both past the pack's 24 symbols. The textbook decoder
+# finds those roots and fails the pack. The firmware halves 40 + 35 - 63 = 12 plus the distance 5
+# with a shift, lands on alpha^8 and alpha^4, and changes symbols 15 and 19: result 2, no flag.
+#
+#   python scripts/subcode/subcode.py cdb105.bin scripts/subcode/miscorrection.txt
+
+pack 15
+past 40 05 35 11
+decode
+
+# Every pair of locators past the pack, and how many the shift places inside it.
+pairs

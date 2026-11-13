@@ -1,0 +1,41 @@
+# Frames written to the format the drive guide describes, not a capture from a drive.
+# After reset the CD block sends null commands until the drive's first report, asks for the
+# table of contents, collects it from the lead-in and seeks to frame 150, where the drive pauses.
+#
+#   python scripts/drive-link/link.py scripts/drive-link/startup.txt
+
+# The first report: the drive is stopped.
+> 00 00 00 00 00 00 00 00 00 00 00 ff 00
+< 10 00 00 00 00 00 00 00 00 00 00 ef 00
+
+# Read TOC, then the drive seeks to the lead-in.
+> 03 01 00 00 00 00 00 00 00 00 02 f9 00
+< 20 00 00 00 00 00 00 00 00 00 00 df 00
+
+# Lead-in reports: point A0 names the first track, A1 the last, A2 the end of the disc, and
+# points 01 and 02 give each track's start.
+> 00 00 00 00 00 00 00 00 00 00 00 ff 00
+< 04 41 00 a0 00 00 01 00 01 00 00 18 00
+> 00 00 00 00 00 00 00 00 00 00 00 ff 00
+< 04 41 00 a1 00 00 02 00 02 00 00 15 00
+> 00 00 00 00 00 00 00 00 00 00 00 ff 00
+< 04 41 00 a2 00 00 03 00 10 00 00 05 00
+> 00 00 00 00 00 00 00 00 00 00 00 ff 00
+< 04 41 00 01 00 00 04 00 00 02 00 b3 00
+> 00 00 00 00 00 00 00 00 00 00 00 ff 00
+< 04 01 00 02 00 00 05 00 05 00 00 ee 00
+
+# Point 02 completes the table of contents, so the next frame carries the seek to frame 150, the
+# start of the disc. The report of the frame that sends a command is not taken.
+> 09 00 00 96 00 00 00 00 00 00 02 5e 00
+< 90 00 00 00 00 00 00 00 00 00 00 6f 00
+> 00 00 00 00 00 00 00 00 00 00 00 ff 00
+< 24 41 01 01 00 00 00 00 00 02 00 96 00
+
+# Paused at 00:02:00. The link keeps running with null commands.
+> 00 00 00 00 00 00 00 00 00 00 00 ff 00
+< 44 41 01 01 00 00 00 00 00 02 00 76 00
+> 00 00 00 00 00 00 00 00 00 00 00 ff 00
+< 44 41 01 01 00 00 00 00 00 02 00 76 00
+> 00 00 00 00 00 00 00 00 00 00 00 ff 00
+< 44 41 01 01 00 00 00 00 00 02 00 76 00

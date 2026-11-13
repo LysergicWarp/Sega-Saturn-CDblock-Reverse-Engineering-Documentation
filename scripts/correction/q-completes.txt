@@ -1,0 +1,9 @@
+# Two errors in column 20 fail the first P pass. Each is alone in its diagonal, 12 and 23, so the
+# Q pass fixes both: 0200, and task 5 delivers the sector.
+#
+#   python scripts/correction/correct.py cdb105.bin scripts/correction/q-completes.txt
+
+sector mode1 850
+error 6 20 1 04
+error 17 20 1 0b
+correct

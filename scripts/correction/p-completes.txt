@@ -1,0 +1,52 @@
+# Columns 14 and 15 hold two errors each. The inner two share diagonal 21, the outer two are
+# alone in theirs. P fails, Q fixes the outer two and fails on diagonal 21, and the second P pass
+# fixes the inner two. The sector is whole, but with an ECC count of 0 no pair follows and the
+# result word keeps the Q failure: 8202 goes to the retry rules.
+#
+#   python scripts/correction/correct.py cdb105.bin scripts/correction/p-completes.txt
+
+sector mode1 850
+error 3 14 0 04
+error 9 14 0 0b
+error 10 15 0 12
+error 18 15 0 19
+correct
+
+# The same errors with one pair allowed. The pair's Q pass finds nothing and ends it: 0002.
+sector mode1 850
+error 3 14 0 04
+error 9 14 0 0b
+error 10 15 0 12
+error 18 15 0 19
+ecc 1
+correct
+
+# Nine errors in columns 1, 18, 29 and 39 that take a pair. With one pair allowed its Q pass fails
+# on diagonal 7 and its P pass completes the sector, the last pass the count allows: 8202 goes to
+# the retry rules.
+sector mode1 850
+error 1 1 0 1d
+error 3 39 0 db
+error 5 18 0 70
+error 8 1 0 a3
+error 10 18 0 97
+error 11 29 0 3f
+error 19 1 0 bf
+error 19 29 0 36
+error 20 39 0 82
+ecc 1
+correct
+
+# The same errors with two pairs allowed. The second pair's Q pass finds nothing: 0002.
+sector mode1 850
+error 1 1 0 1d
+error 3 39 0 db
+error 5 18 0 70
+error 8 1 0 a3
+error 10 18 0 97
+error 11 29 0 3f
+error 19 1 0 bf
+error 19 29 0 36
+error 20 39 0 82
+ecc 2
+correct

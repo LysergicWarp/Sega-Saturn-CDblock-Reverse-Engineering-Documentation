@@ -1,0 +1,13 @@
+# Runs on plain.iso, one of the images make.py writes:
+#
+#   python scripts/directory/make.py
+#   python scripts/directory/directory.py plain.iso scripts/directory/interleaved.txt
+
+# FILM.DAT has 6 sectors in units of 2 with gaps of 1, so it spans 8 frames. Read File's frame
+# range counts only the file's sectors, so it ends before the file does.
+root
+read 3
+read 3 3
+
+# README.TXT is not interleaved: its range is exactly its sector.
+read 4

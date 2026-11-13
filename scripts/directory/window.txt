@@ -1,0 +1,28 @@
+# Runs on plain.iso, one of the images make.py writes:
+#
+#   python scripts/directory/make.py
+#   python scripts/directory/directory.py plain.iso scripts/directory/window.txt
+
+# The root, then MANY, a directory of 300 files. The table takes its records 0 and 1 and the
+# first 254 files, and keeps where the record after the window lies.
+root
+cd 2
+scope
+
+# An ID past the window: the read goes on from the kept record, skipping to the ID.
+dir 290
+scope
+
+# An ID before the window: the whole directory is read again, skipping to the ID.
+dir 20
+
+# An ID further into the window: its records move to index 2 and the rest is read on.
+dir 100
+
+# The window now reaches the directory's last record, so an ID past it changes nothing, and so
+# does the window's own first ID.
+dir 400
+dir 100
+
+# Get File Info for one file in the window.
+info 150

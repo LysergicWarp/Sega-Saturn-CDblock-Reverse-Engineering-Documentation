@@ -1,0 +1,25 @@
+# One error in each of ten P vectors and in eight Q parity words, which no P vector holds.
+# The first P pass fixes ten, the Q pass eight, and the second P pass finds nothing: 0800.
+#
+#   python scripts/correction/correct.py cdb105.bin scripts/correction/single-errors.txt
+
+sector mode1 850
+error 1 2 0 01
+error 3 3 1 80
+error 5 4 1 3c
+error 7 5 0 ff
+error 24 10 0 55       # P parity row
+error 25 11 1 0f       # P parity row
+error 13 42 0 9a       # column 42
+error 14 42 1 21
+error 23 37 0 44       # byte 2064, the EDC
+error 23 40 1 10       # byte 2071, a zero byte
+byte 2248 11           # diagonal 0, parity 0, byte 0
+byte 2302 22           # diagonal 1, parity 1, byte 0
+byte 2253 33           # diagonal 2, parity 0, byte 1
+byte 2307 44           # diagonal 3, parity 1, byte 1
+byte 2308 55           # diagonal 4, parity 1, byte 0
+byte 2258 66           # diagonal 5, parity 0, byte 0
+byte 2313 77           # diagonal 6, parity 1, byte 1
+byte 2263 88           # diagonal 7, parity 0, byte 1
+correct
