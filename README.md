@@ -14,11 +14,12 @@ its ROM addresses.
 
 The [CD block emulator][emulator] runs your dump on an emulation of the CD block's SH-1 board. It
 is a separate repository, included here as the `emulator/` submodule, and holds the example code
-and the `ring/` and `payload/` scripts. Clone with `--recurse-submodules`, or run
-`git submodule update --init` in a clone. The scripts run as they are. The emulator and its example
-code need a build of the emulator, SH binutils to assemble the examples, and your dump in
-`emulator/dumps/`, where their commands look for it ([quick start][emulator-quick-start],
-[running the examples][emulator-examples-running]).
+and the `ring/` and `payload/` scripts. Clone with `--recurse-submodules --remote-submodules`, or
+run `git submodule update --init --remote` in a clone. Either checks out the latest commit of the
+emulator's `main` branch, which is the version these guides go with. The scripts run as they are.
+The emulator and its example code need a build of the emulator, SH binutils to assemble the
+examples, and your dump in `emulator/dumps/`, where their commands look for it
+([quick start][emulator-quick-start], [running the examples][emulator-examples-running]).
 
 ## Documents
 
