@@ -572,6 +572,10 @@ python emulator/scripts/ring/ring.py cdb105.bin emulator/scripts/ring/full-check
 This is a proposal. Its [example code][emulator-examples-status] has run only in emulation, not on
 a console.
 
+The [CD-block SH-1 demo][demo] takes it further, still in emulation: a card firmware in assembly
+and in C, three modules, an SH-2 client, and discs whose SH-2 programs run jobs on the SH-1. It
+runs in a [fork of Beetle Saturn][beetle-fork] with the emulator as its CD block.
+
 A card extension of one's own could take jobs from the SH-2 and run them on the SH-1 in task 9,
 which runs the card checks and the card work loop. The SH-2 would put the inputs into the sector
 buffer with Put Sector Data and take the results with Get Sector Data. The extension could also load
@@ -583,9 +587,10 @@ interrupts enabled, holds the sector buffer's lock only briefly and leaves room 
 disc reads.
 
 [`module-extension.s`][emulator-module-extension.s] defines how a module in assembly is loaded,
-called and unloaded. Still open are compiled modules, a loader proven on a console, the card
-hardware and jobs alongside sustained disc reads. Compiled modules need a larger stack than task
-9's and helpers for the 32-bit multiply and divide the SH-1 lacks.
+called and unloaded. Still open are compiled modules, a loader proven on a console and the card
+hardware. Jobs alongside sustained disc reads have run in the demo, in emulation, and not on a
+console. Compiled modules need a larger stack than task 9's and helpers for the 32-bit multiply
+and divide the SH-1 lacks.
 
 A loaded card extension survives the host's reset command, but the card goes off until `93`. An
 accepted disc clears it, and the disc can only be checked with the card off, so a game checks the
@@ -676,6 +681,8 @@ BSD-3-Clause ([LICENSE](LICENSE)). The emulator in `emulator/` has its own
 
 [SEGA-CD]: https://www.infochunk.com/saturn/segahtml_en/hard/intr/hon/p03_60.htm
 [SEGA-CPU]: https://www.infochunk.com/saturn/segahtml_en/hard/intr/hon/p03_10.htm
+[beetle-fork]: https://github.com/LysergicWarp/beetle-saturn-libretro-cd-block-emulator
+[demo]: https://github.com/LysergicWarp/Sega-Saturn-CDblock-SH1-Demo
 [emulator]: https://github.com/LysergicWarp/Sega-Saturn-CDB-Emulator
 [emulator-examples]: https://github.com/LysergicWarp/Sega-Saturn-CDB-Emulator/tree/main/examples
 [emulator-examples-running]: https://github.com/LysergicWarp/Sega-Saturn-CDB-Emulator/blob/main/examples/README.md#running-one
