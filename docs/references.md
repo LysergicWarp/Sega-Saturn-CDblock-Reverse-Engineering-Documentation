@@ -270,7 +270,9 @@ cover the MPEG command range `0x90..0xaf`
   YGR022 unit.
 - jhl, 2014-07-01, [firmware findings][JHL-4]: encrypted SH-1 code can load from an authenticated
   Saturn disc, using header fields `0xf8`/`0xfc`. jhl suggested development bug fixes as the
-  purpose. The same source reports no designed command for direct SH-2-to-SH-1 code injection, and
+  purpose. The encoding has no key: the firmware's transform depends only on the block count, and
+  the `Hitachi.PublicKeyCipher.` text in the ROM is read as constant data
+  ([decoder](cdblock/decoder.md)), so anyone can encode code for it. The same source reports no designed command for direct SH-2-to-SH-1 code injection, and
   says most MPEG commands `0x90..0xaf` dispatch into card-loaded code, except `0x93`, `0xae` and
   `0xaf`.
 - The same post reports that "both scrambled ring data (the logo) and the track wobble data from the

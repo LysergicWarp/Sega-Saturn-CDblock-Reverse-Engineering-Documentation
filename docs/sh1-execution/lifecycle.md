@@ -28,6 +28,11 @@ again. The card bit opens the MPEG commands and task 9's card work loop
   running. Task 9 writes the stop's MPED only after that call returns. Until then an accepted disc
   can clear the expansion area under the call, and another activation can clear MPEG state it
   still uses.
+- The host therefore waits for the stop's MPED before it sends `E0`. A call that still takes the
+  sector lock during the disc check can also leave task 7 holding the lock, and at the extension
+  read that stalls the request until its 20 seconds run out: result 4, but no extension installed
+  and the earlier one already cleared
+  ([a contended sector lock](../cdblock/disc-authentication.md#a-contended-sector-lock)).
 - A reset restarts the SH-1 and the drive from ROM ([board](../board.md#clock-reset-and-mode)).
   The authentication result and the [delivery gate](../cdblock/disc-authentication.md#delivery-gate)
   start at 0, so the order after a reset is the one at power-on: the disc first, then the card.

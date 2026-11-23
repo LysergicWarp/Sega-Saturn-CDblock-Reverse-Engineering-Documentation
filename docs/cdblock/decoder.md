@@ -88,8 +88,9 @@ The following holds for any payload, block count and incoming T:
    `xor r6,r7` at `0x9b98`, so `r7 = 0`.
 2. `rotl r7` at `0x9bac` leaves zero. `0x9bb6` copies zero to `r9`, and `swap.w` at `0x9bbc` leaves
    zero. Nothing changes `r9` before `0x9bd2`.
-3. `shll r1` at `0x9bcc` sets T. `rotcl r5` at `0x9bce` and `rotcl r4` at `0x9bd0` carry bits
-   through the payload registers, which matters to the arithmetic.
+3. `mov r4,r1` at `0x9bc6` copies the first payload word, and nothing writes `r1` or `r4` before
+   `shll r1` at `0x9bcc`, which sets T to that word's bit 31. `rotcl r5` at `0x9bce` and `rotcl r4`
+   at `0x9bd0` carry bits through the payload registers, which matters to the arithmetic.
 4. `rotcl r9` at `0x9bd2` rotates zero with incoming T. The result is 0 or 1, and the outgoing T is
    the old bit 31 of `r9`, which is zero.
 5. Every instruction at `0x9bd4..0x9bec` preserves T. `SHLL8`, `SHLR8` and `SHLR16` do not update
@@ -280,7 +281,8 @@ PAIR_R(x, y, n) = ((x << n) | (y >> (32 - n)),
 - `SB(0x12345678) = 0x12347856` and `U(0x12345678) = 0x34125678`. Neither is a full byte reversal.
   `P` returns the full 32-bit product, as `MULU.W` does through MACL.
 - `PAIR_R(x,y,1)` is the `SHLL`/`ROTCL` chain at `0x9bcc..0x9bd0`: old `x` bit 31 enters `y` bit 0
-  and old `y` bit 31 enters `x` bit 0. The rotation of zero at `0x9bd2` clears T and leaves the pair
+  and old `y` bit 31 enters `x` bit 0. The `SHLL` shifts `r1`, a copy of `x` made at `0x9bc6`, so
+  it supplies `x`'s bit 31 without changing `x`. The rotation of zero at `0x9bd2` clears T and leaves the pair
   unchanged.
 - `PAIR_R(x,y,16)` is the two `XTRCT` instructions and the moves after them at `0x9a8e..0x9a9a`. It
   rotates the 64-bit concatenation, not each word.

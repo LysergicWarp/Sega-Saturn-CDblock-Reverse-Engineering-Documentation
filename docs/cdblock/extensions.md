@@ -98,6 +98,12 @@ the result checks out, install its vector table and call it. Only
   checks write over it and, where they never write, as in the scramble buffer's first 12 bytes,
   until the CD block is next reset
   ([scrambling](disc-authentication.md#scrambling-and-interleaving)).
+- Code that stays installed cannot rely on the part past the area's end: a later disc check that
+  fails leaves the extension in place and writes those buffers again.
+- The disc request state starts at `0x0907adb0`, 21,864 bytes after the start of the collection
+  area. The extension read is using it, its state byte and collection result among it
+  ([names](disc-authentication.md#names)), so a collection that reaches it overwrites the request
+  that is running.
 - Collection `disc_extension_collect` (`0x1a38`) takes a slot number in r0 and reads the raw sector
   at `0x09000230 + 0x930 * low16(slot)`. It skips a 16-byte header for mode 1 or 24 bytes otherwise
   and appends up to 2048 bytes to the collection area, under the sector lock (`0x0b070000`).
@@ -169,7 +175,8 @@ under the condition below, then call the card's entry.
 
 - Entry `expansion_extension_load` (`0x1b06`) reads a BE32 length from `0x0e000000`, accepts
   `1..0x5000` and decodes from `0x0e000004` into the expansion area. The decoder also requires at
-  least two blocks.
+  least two blocks. At the full `0x5000` the trailer's last four bytes lie at
+  `0x0e005000..0x0e005003`, the start of the first page that [Get MPEG ROM](#get-mpeg-rom) copies.
 - Decoded `+0` goes to the MPEG version.
 - When the disc extension's `+0x45` is greater than the expansion's `+1` (both sign-extended,
   compared unsigned) and disc `+0x40` is nonzero, that callback runs first.

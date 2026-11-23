@@ -79,8 +79,8 @@ A disc extension can install a card extension with no card in the slot. Its entr
 the disc is accepted ([disc entry](../cdblock/extensions.md#disc-entry)), and does what a card
 load and startup's card test would have done:
 
-1. Copies the card extension's image, carried in the disc extension, to the expansion area at
-   `0x0907b000`, where the expansion loader would decode it.
+1. Copies the card extension's decoded image, carried in the disc extension as plain code, to the
+   expansion area at `0x0907b000`, where the expansion loader would have decoded it.
 2. Calls the image's entry at `+4` as the loader does, with r0 its address and r1 `0x0907b000`.
    The entry fills its table and returns.
 3. Sets bit 1 of the hardware flag `0x0f00027d`, MPEG card present.
@@ -97,9 +97,19 @@ load and startup's card test would have done:
   gets the extension, however the disc was booted.
 - Startup's card test works bit 1 out again at a CD-block reset, which also clears the disc
   extension.
-- A burned disc needs a drive whose answers the firmware's own check accepts. On consoles whose
-  drive is replaced by MODE or Fenrir, two optical drive emulators, it accepts the disc and runs
-  the extension.
+- The entry runs on task 7's stack with interrupts masked. That stack is 136 bytes in all,
+  `0x0f000a90..0x0f000b18` ([tasks](../cdblock/kernel.md#tasks)), and the extension read and the
+  decoder's call have used part of it. An entry that needs more switches to a stack of its own, as
+  under [register and stack constraints](#register-and-stack-constraints).
+- The firmware runs a disc's extension only for a disc it accepts. On consoles whose drive is
+  replaced by MODE or Fenrir, two optical drive emulators, it accepts a burned disc and runs the
+  extension.
+- Two other ways to an accepted burned disc follow from the firmware and are untested. After a
+  system disc such as KD02 has passed, a disc whose maker ID starts the same way is accepted from
+  its header alone, and that path prepares the extension like any other acceptance
+  ([trusted-ID shortcut](../cdblock/disc-authentication.md#trusted-id-shortcut)). A console with a
+  modchip leaves the check to the firmware too, so a disc it passes there should also get its
+  extension run.
 
 The scroller disc of the [CD-block SH-1 demo][demo] installs its assembly card firmware this way,
 and runs unchanged on such consoles with the slot empty. `93`'s activation, which writes card
@@ -140,6 +150,11 @@ Firmware mailboxes hold one word per message class. A second message of the same
 an unconsumed first message. Use the message as a wakeup, with a separate bounded job queue, or
 reject a submission while a job is outstanding. Completion needs a job identifier and a defined
 status or notification, including failure and cancellation.
+
+Post the wakeup. The kernel's send and wait, `TRAPA 0x20`, is not a way to hand task 9 a job: sent
+to a task that is already in a ready queue, its search runs off the queue into a CPU address
+error, and once a disc has named an extension it follows the extension's length as a record
+address instead ([send and reply](../cdblock/kernel.md#send-and-reply)).
 
 ## Scheduling alongside disc reads
 
