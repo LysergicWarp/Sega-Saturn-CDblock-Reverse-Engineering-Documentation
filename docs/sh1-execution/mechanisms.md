@@ -1,14 +1,15 @@
 # Firmware mechanisms
 
 The CD-block firmware can load native SH-1 code from an MPEG card and call it from its existing
-tasks. A custom card extension could use those calls to accept computation jobs from the SH-2,
+tasks. A card extension of one's own can use those calls to accept computation jobs from the SH-2,
 process data in CD-block RAM and return results through the sector buffer. A resident extension
-could also load further SH-1 programs uploaded by the game.
+can also load further SH-1 programs uploaded by the game.
 
-This page describes the firmware mechanisms and the proposed use of them. Addresses refer to
-CDB105 (SHA-1 `eb8393058f324e922c11b43709b64fc6ca94ab86`). A general-purpose module loader,
-sustained computation alongside disc reads and the required custom card hardware are not
-established on a console. No CPU budget or performance gain is known.
+This page describes the firmware mechanisms and how an extension uses them. Addresses refer to
+CDB105 (SHA-1 `eb8393058f324e922c11b43709b64fc6ca94ab86`). Such an extension, with a module
+loader, has run on consoles whose drive is replaced by MODE or Fenrir, installed from a disc with
+no card in the slot ([disc bootstrap](#disc-bootstrap)). Custom card hardware is not established
+on a console. No CPU budget or performance gain is known.
 
 ## Execution model
 
@@ -16,10 +17,11 @@ The SH-2 submits commands and transfers bytes. The SH-1 executes the extension i
 space, under the CD firmware's kernel. The host has no direct access to CD-block RAM, and Put
 Sector Data does not provide an arbitrary-address write or an execute command.
 
-The proposed arrangement has two parts:
+The arrangement has two parts:
 
-- A resident extension supplied by MPEG-slot hardware. The stock loader decodes it, calls its
-  initialization entry and later dispatches host commands and task work through its function table.
+- A resident extension supplied by MPEG-slot hardware, or installed by a disc extension
+  ([disc bootstrap](#disc-bootstrap)). The stock loader decodes it, calls its initialization entry
+  and later dispatches host commands and task work through its function table.
 - A module loader within that extension. It accepts native SH-1 code and data from the host,
   installs them in owned RAM and calls a selected entry when a job is submitted.
   [module-extension.s][emulator-module-extension.s] defines one such format and protocol.
@@ -69,6 +71,41 @@ card interface. An MPEG movie is not an executable bootstrap. The checks' use of
 DMA completion and memory does not establish the minimum electrical implementation of a custom
 card. See [card checks](../cdblock/extensions.md#mpeg-card-requests),
 [activation](../cdblock/extensions.md#card-activation) and [board wiring](../board.md#mpeg-card).
+A disc extension can take the place of the card and its load ([disc bootstrap](#disc-bootstrap)).
+
+## Disc bootstrap
+
+A disc extension can install a card extension with no card in the slot. Its entry runs once, after
+the disc is accepted ([disc entry](../cdblock/extensions.md#disc-entry)), and does what a card
+load and startup's card test would have done:
+
+1. Copies the card extension's image, carried in the disc extension, to the expansion area at
+   `0x0907b000`, where the expansion loader would decode it.
+2. Calls the image's entry at `+4` as the loader does, with r0 its address and r1 `0x0907b000`.
+   The entry fills its table and returns.
+3. Sets bit 1 of the hardware flag `0x0f00027d`, MPEG card present.
+
+`93` then activates the extension as it would a card's, and the MPEG commands reach its table.
+`93` looks for a loaded extension at the image's version byte, `0x0907b000`
+([`93`](../cdblock/host-commands.md#93)), which the copy has filled.
+
+- The MPEG version `0x0f0002fd` stays 0, since no expansion load ran, so `E2` stays rejected.
+- With bit 1 set, `E0` subcode 1 runs the card checks against the empty slot. They fail and clear
+  the expansion area, so the host never sends it.
+- Every accepted disc clears the expansion area before its disc extension is read, so each
+  acceptance installs a fresh image. A program that checks its own disc again with `E0` at boot
+  gets the extension, however the disc was booted.
+- Startup's card test works bit 1 out again at a CD-block reset, which also clears the disc
+  extension.
+- A burned disc needs a drive whose answers the firmware's own check accepts. On consoles whose
+  drive is replaced by MODE or Fenrir, two optical drive emulators, it accepts the disc and runs
+  the extension.
+
+The scroller disc of the [CD-block SH-1 demo][demo] installs its assembly card firmware this way,
+and runs unchanged on such consoles with the slot empty. `93`'s activation, which writes card
+registers, leaves the firmware working. The program uploads a cipher module, which the firmware
+loads with its CRC check, and the module decrypts the picture's strips in task 9 as the drive
+streams them off the disc.
 
 ## Submitting work to task 9
 
@@ -152,7 +189,7 @@ accounted for before treating every idle cycle as available.
 
 ## Code, data and buffer ownership
 
-A proposed host sequence is `64` (Put Sector Data), transfer, `06` (End Data Transfer), submit,
+A host sequence is `64` (Put Sector Data), transfer, `06` (End Data Transfer), submit,
 completion, then `61` (Get Sector Data) or `63` (Get and Delete Sector Data), transfer and `06`.
 Puts arrive in sector slots through a filter. They do not land directly at a module's load address.
 The resident loader must locate the uploaded bytes and install the module itself.
@@ -285,10 +322,11 @@ and job handles, abort outstanding work and rediscover the extension after state
 - Transfer cost, available compute time and effects on disc latency require hardware measurements.
   A compute-heavy job with reusable inputs may be suitable, but no workload speedup is established.
 
-The separate disc-extension loader can also introduce SH-1 code, but requires accepted-disc
-handling. It is not needed for the custom-card route described here. `E2` retrieves card ROM into
-sector buffers and is not an upload-and-execute operation.
+The disc-extension loader is the way in without card hardware, but only for a disc the firmware
+accepts ([disc bootstrap](#disc-bootstrap)). `E2` retrieves card ROM into sector buffers and is not
+an upload-and-execute operation.
 
+[demo]: https://github.com/LysergicWarp/Sega-Saturn-CDblock-SH1-Demo
 [emulator-decompress-extension.s]: https://github.com/LysergicWarp/Sega-Saturn-CDB-Emulator/blob/main/examples/decompress-extension.s
 [emulator-disc-decompress-extension.s]: https://github.com/LysergicWarp/Sega-Saturn-CDB-Emulator/blob/main/examples/disc-decompress-extension.s
 [emulator-examples-status]: https://github.com/LysergicWarp/Sega-Saturn-CDB-Emulator/blob/main/examples/README.md#status

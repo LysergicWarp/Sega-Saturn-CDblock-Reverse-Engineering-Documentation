@@ -718,9 +718,12 @@ kind's hooks.
   both, along with the expansion area.
 - A disc extension runs after acceptance has cleared the expansion area, so it can fill the
   expansion's table itself. The MPEG commands then still need the card bit and hardware flag bit 1.
-  Setting bit 1 by hand also makes `01` report a card.
-- Some card-on paths write card registers, such as `93`'s stop and reset
-  ([`93`](host-commands.md#93)). What those writes do with no card present is unknown.
+  Setting bit 1 by hand also makes `01` report a card. A disc extension that installs a card
+  extension this way has run on consoles with MODE or Fenrir in place of the drive
+  ([disc bootstrap](../sh1-execution/mechanisms.md#disc-bootstrap)).
+- Some card-on paths write card registers, such as `93`'s activation, stop and reset
+  ([`93`](host-commands.md#93)). On those consoles, with no card present, the activation left the
+  extension working. What the stop and reset writes do with no card present is unknown.
 - The host's reset request keeps a disc extension's vectors and resume words in effect, but turns
   the card off until `93` activates it again ([lifetime](#lifetime)).
 

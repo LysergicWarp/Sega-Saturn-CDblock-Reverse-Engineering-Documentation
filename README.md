@@ -65,11 +65,11 @@ The firmware places the decoded code at `0x0907b000`.
 
 ### Executing SH-1 code from the SH-2
 
-How a card extension of one's own could run work for the SH-2, and what the firmware does to it.
+How a card extension of one's own runs work for the SH-2, and what the firmware does to it.
 
 | Document | Contents |
 | --- | --- |
-| [Firmware mechanisms](docs/sh1-execution/mechanisms.md) | Proposed computation through a card extension: loading, jobs, preemption, buffer ownership and remaining constraints |
+| [Firmware mechanisms](docs/sh1-execution/mechanisms.md) | Computation through a card extension: loading, installing it from a disc, jobs, preemption, buffer ownership and remaining constraints |
 | [Card extension lifecycle](docs/sh1-execution/lifecycle.md) | What activation, stops, resets, reloads and accepted discs leave of a loaded card extension, and the order a game follows |
 | [Example code][emulator-examples] | Proof-of-concept extensions in SH-1 assembly with scenarios that run them on the emulator, what they have run on, and what turning one into card firmware takes. In the emulator's repository |
 
@@ -566,20 +566,25 @@ python emulator/scripts/ring/ring.py cdb105.bin emulator/scripts/ring/full-check
   ([extensions](docs/cdblock/extensions.md#expansion-entries)).
 - jhl reported in 2014 that an authenticated Saturn disc can load encrypted SH-1 code through the
   header fields at `0xf8` and `0xfc` ([references](docs/references.md#historical-reports)).
+- On consoles whose drive is replaced by MODE or Fenrir, two optical drive emulators, the firmware
+  accepts a burned disc and runs a disc extension of one's own from it
+  ([disc bootstrap](docs/sh1-execution/mechanisms.md#disc-bootstrap)).
 
 ## Executing SH-1 code from the SH-2
 
-This is a proposal. Its [example code][emulator-examples-status] has run only in emulation, not on
-a console.
+The [example code][emulator-examples-status] has run only in emulation. The
+[CD-block SH-1 demo][demo] takes it further: a card firmware in assembly and in C, four modules, an
+SH-2 client, and discs whose SH-2 programs run jobs on the SH-1. It runs in a
+[fork of Beetle Saturn][beetle-fork] with the emulator as its CD block. Its scroller disc
+without the card also runs on consoles whose drive is replaced by MODE or Fenrir. There a disc
+extension installs the assembly card firmware with no card in the slot, the firmware loads a cipher
+module, and the SH-1 decrypts the picture's strips as the drive streams them
+([disc bootstrap](docs/sh1-execution/mechanisms.md#disc-bootstrap)).
 
-The [CD-block SH-1 demo][demo] takes it further, still in emulation: a card firmware in assembly
-and in C, three modules, an SH-2 client, and discs whose SH-2 programs run jobs on the SH-1. It
-runs in a [fork of Beetle Saturn][beetle-fork] with the emulator as its CD block.
-
-A card extension of one's own could take jobs from the SH-2 and run them on the SH-1 in task 9,
-which runs the card checks and the card work loop. The SH-2 would put the inputs into the sector
-buffer with Put Sector Data and take the results with Get Sector Data. The extension could also load
-SH-1 modules that the game uploads.
+A card extension of one's own takes jobs from the SH-2 and runs them on the SH-1 in task 9, which
+runs the card checks and the card work loop. The SH-2 puts the inputs into the sector buffer with
+Put Sector Data and takes the results with Get Sector Data. The extension can also load SH-1
+modules that the game uploads.
 
 Every task except the idle task outranks task 9, and interrupts hand the processor to them when
 they have work, so a job runs in the time they leave. There is no time slice. A job keeps
@@ -587,17 +592,16 @@ interrupts enabled, holds the sector buffer's lock only briefly and leaves room 
 disc reads.
 
 [`module-extension.s`][emulator-module-extension.s] defines how a module in assembly is loaded,
-called and unloaded. Still open are compiled modules, a loader proven on a console and the card
-hardware. Jobs alongside sustained disc reads have run in the demo, in emulation, and not on a
-console. Compiled modules need a larger stack than task 9's and helpers for the 32-bit multiply
+called and unloaded. Still open are compiled modules and the card hardware. Jobs alongside
+sustained disc reads have run in the demo, in emulation and on consoles with MODE or Fenrir. Compiled modules need a larger stack than task 9's and helpers for the 32-bit multiply
 and divide the SH-1 lacks.
 
 A loaded card extension survives the host's reset command, but the card goes off until `93`. An
 accepted disc clears it, and the disc can only be checked with the card off, so a game checks the
 disc before it loads the card.
 
-[Firmware mechanisms](docs/sh1-execution/mechanisms.md) covers the firmware mechanisms, proposed
-protocol, scheduling, memory ownership and remaining requirements, and
+[Firmware mechanisms](docs/sh1-execution/mechanisms.md) covers the firmware mechanisms, the disc
+bootstrap, the protocol, scheduling, memory ownership and remaining requirements, and
 [card extension lifecycle](docs/sh1-execution/lifecycle.md) what each event leaves, with a minimal
 extension that goes through it.
 
