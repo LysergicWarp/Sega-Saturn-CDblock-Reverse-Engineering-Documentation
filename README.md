@@ -10,7 +10,10 @@ No ROM content is included. Everything here describes revision CDB105 (SHA-1
 `eb8393058f324e922c11b43709b64fc6ca94ab86`). [Firmware revisions](docs/firmware-revisions.md) lists
 the other known revisions and what changed in each. Where the Saturn's own BIOS matters, it is
 BIOS 1.01a, MPR-17933 (SHA-1 `faa8ea183a6d7bbe5d4e03bb1332519800d3fbc3`), and BIOS addresses are
-its ROM addresses.
+its ROM addresses. Where the console hardware matters, the reference is a North American
+MK-80000A console with a VA8 main board, CD block firmware CDB106, and a 21-pin JVC ENR-013A
+drive, marked 610-6185-20. Other boards and drives are noted where they are known to differ
+([drive generations](docs/board.md#drive-generations)).
 
 The [CD block emulator][emulator] runs your dump on an emulation of the CD block's SH-1 board. It
 is a separate repository, included here as the `emulator/` submodule, and holds the example code

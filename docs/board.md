@@ -6,7 +6,8 @@ pads. The wiring is the SH-1 board in Sega's Saturn PAL
 service manual, with the SH-1 and a YGR019A interface chip as separate parts
 ([Schematic Diagram-7][SM], "SH-1 C.B", printed pages 25-26). YGR022 combines the two chips, so on
 those boards the interface signals are internal. Pin numbers are the SH-1's 112-pin package
-([SH7034 notes](sh7034.md)), and signal names are the schematic's.
+([SH7034 notes](sh7034.md)), and signal names are the schematic's. Measurements without a cited
+source are from the reference VA8 board and its JVC ENR-013A drive ([README](../README.md)).
 
 ## Parts
 
@@ -124,7 +125,7 @@ described where the firmware uses it.
 ## Optical drive
 
 The drive link runs on SCI0 and two port pins to the drive connector. The service manual's board wires
-them straight, VA8 puts series resistors on the two outputs
+them straight, the reference VA8 board puts series resistors on the two outputs
 ([21-pin drive connector](#21-pin-drive-connector)). `CDATA`, `COMREQ` and `COMSYNC` have 4.7K
 pull-ups.
 
@@ -158,24 +159,31 @@ pull-ups.
 
 ### Drive generations
 
-Four drive types are in use across the main board revisions ([GDEMU][GDEMU]). Each drive has its
-own controller, which takes the SH-1's commands and runs the mechanism. No dump of any
-controller's firmware is known.
+Four drive types are in use across the main board revisions ([GDEMU][GDEMU],
+[Sega Retro][SR-REV]). Each drive has its own controller, which takes the SH-1's commands and runs
+the mechanism. No dump of any controller's firmware is known.
 
 | Type | Main boards | Cable | Drive controller | Drives |
 | --- | --- | --- | --- | --- |
-| 1 | VA0, VA1 | 20-pin | Hitachi H8 `HD6433712H`, program `CDM103V` ([SegaXtreme][SX-H8]) | JVC ENR-007B/D, Hitachi JA0027 |
+| 1 | VA0, VA1 | 20-pin | Hitachi H8 `HD6433712H`, program `CDM103V` ([SegaXtreme][SX-H8]) | JVC ENR-007B/D, Hitachi JA0027 (JA00292 in Sega Retro) |
 | 2 | VA2..VA5 | 21-pin | 64-pin Hitachi H8 `HD6433612H`, program `CDM202V` | JVC ENR-011A |
-| 3 | VA6..VA9 | 21-pin | 32-pin Mitsubishi `M37477M8-241FP`, program `CDM301V` | JVC ENR-013A, Sanyo 610-6185-20/-30 |
-| 4 | VA10..VA15 | 21-pin | 32-pin, program `CDM301V` ([TriMesh][TM-PINS]) | JVC HQA-001A, Sanyo 610-6294-30, 610-6473-30 |
+| 3 | VA6..VA9 | 21-pin | 32-pin Mitsubishi `M37477M8-241FP`, program `CDM301V` | JVC ENR-013A (610-6185-20), Sanyo 610-6185-30 |
+| 4 | VA10..VA15 | 21-pin | 32-pin, program `CDM301V` ([TriMesh][TM-PINS]) | JVC HQA-001A (610-6294-20), Sanyo 610-6294-30, 610-6473-30 |
 
+- Each controller entry is from one drive: type 1 the one in the SegaXtreme report, type 2 an
+  ENR-011A, type 3 the reference ENR-013A and type 4 TriMesh's HQA-001A. The ENR-007B and
+  ENR-007D differ in their controllers ([Sega Retro][SR-REV]). The Sanyo drives' controllers are
+  unknown.
+- The reference drive's board is marked 610-6185-20 and JVC EXL-P605. GDEMU lists 610-6185-20 as a
+  Sanyo drive, Sega Retro as the JVC ENR-013A's number, which the marking agrees with.
 - The `HD6433612H` is a Hitachi H8/3612, an H8/300L single-chip MCU with 16 KB of mask ROM at
   `0x0000..0x3fff` and 512 B of RAM (Hitachi H8/3614 Series Hardware Manual).
 - The `M37477M8` is a Mitsubishi 740-family (6502-derived) single-chip MCU with 16 KB of mask ROM
   at `0xc000..0xffff` and no external bus (Mitsubishi 7477/7478 Group data sheet, Rev. 1.0,
   December 1997).
-- The rest of the type 3 and 4 drive board: `MN662724` servo and signal processor, `AN8809` RF
-  amplifier, `M56754SP` actuator and motor driver ([TriMesh][TM-PINS]).
+- The rest of TriMesh's HQA-001A board: `MN662724` servo and signal processor, `AN8809` RF
+  amplifier, `M56754SP` actuator and motor driver ([TriMesh][TM-PINS]). The reference ENR-013A
+  carries the same `MN662724` and `M56754SP`.
 
 ### 21-pin drive connector
 
@@ -193,7 +201,7 @@ same job.
 | 5 | Byte sync, one pulse per byte | Controller pin 1 | `COMREQ` |
 | 6 | Frame signal, at the CD frame rate during play and 60 Hz when idle | Controller pin 5 | `COMSYNC` |
 | 7 | Bit clock | Controller pin 2 | `COMCLK` |
-| 8 | Ground on JVC drives. The main board reads it: ground selects 33 MHz, open 16 MHz | | |
+| 8 | Ground on the HQA-001A. The main board reads it: ground selects 33 MHz, open 16 MHz | | |
 | 9, 14 | `BCLK`, joined on the drive | DSP pin 1 | Data stream |
 | 10 | `BLKCLK`, high at the start of each subcode block (75 Hz at 1x) | DSP pin 13 | Subcode stream |
 | 11 | `/RESET` | Controller pin 18 | `RESET` |
@@ -205,16 +213,23 @@ same job.
 | 20 | `IPFLG`, high on a C2 error | DSP pin 64 | `C2F` |
 | 21 | `/CLDCLK`, subcode frame clock | DSP pin 62 | Subcode stream |
 
-- A VA8 board wires the link the same way. SH-1 pins 111, 108, 107, 101 and 100 reach pins 7, 4,
-  3, 5 and 6, and the board reset reaches pin 11. `COMCLK` and `HDATA` pass through series
-  resistors of about 300 Ω, the other lines connect directly. Pins 2, 8, 12 and 16 are ground, and
-  `PC0` (pin 87) is grounded, the 21-pin drive strap.
+- The reference VA8 board wires the link the same way. SH-1 pins 111, 108, 107, 101 and 100 reach
+  pins 7, 4, 3, 5 and 6, and the board reset reaches pin 11. `COMCLK` and `HDATA` pass through
+  series resistors of about 300 Ω, the other lines connect directly. Pins 2, 8, 12 and 16 are
+  ground, and `PC0` (pin 87) is grounded, the 21-pin drive strap.
 - On the `M37477M8` the five link pins are its clock-synchronous serial I/O and a timer output:
   pin 1 `SRDY`, pin 2 `SCLK`, pin 3 `TxD`, pin 4 `RxD` and pin 5 `T1`. The SH-1 drives `COMCLK`
   from SCK0, so the controller's serial I/O runs on that external clock and signals each byte with
   `SRDY`.
-- The drive's power connector CN103 carries +5 V for the motor driver's output stage, +5 V for the
-  rest of the board, a ground for each, and the lid switch to controller pin 30 (low when closed).
+- The HQA-001A's DSP is a Panasonic `MN662724`. Pin 19 reaches its `SBCK`, an input that shifts
+  the subcode out on `SUBC`, so the main board clocks the subcode stream. `/CLDCLK` is the DSP's
+  subcode frame clock `/CLDCK` (pin 62), separate from its crystal frame clock `FCLK` (pin 63, not
+  on the connector). Both run at 7.35 kHz at single speed (Panasonic MN662724RPE data sheet).
+- The reference ENR-013A carries the same DSP. Whether the JVC ENR-011A and the Sanyo drives do is
+  unknown.
+- The HQA-001A's power connector CN103 carries +5 V for the motor driver's output stage, +5 V for
+  the rest of the board, a ground for each, and the lid switch to controller pin 30 (low when
+  closed).
 
 ## Audio
 
@@ -423,6 +438,7 @@ direction and function registers as longwords at `0x05d2..0x05de`, with GBR at `
 
 [SM]: https://segaretro.org/images/4/4e/Sega_Service_Manual_-_Sega_Saturn_(PAL)_-_013-1_-_June_1995.pdf
 [GDEMU]: https://gdemu.wordpress.com/details/saturn-details/
+[SR-REV]: https://segaretro.org/Sega_Saturn/Hardware_revisions
 [SX-H8]: https://segaxtreme.net/threads/this-idea-a-had.5269/
 [TM-PINS]: https://assemblergames.org/viewtopic.php?t=40345
 [YMIR-YGR]: https://github.com/ymir-emu/Ymir/blob/main/libs/ymir-core/include/ymir/hw/cdblock/ygr.hpp
