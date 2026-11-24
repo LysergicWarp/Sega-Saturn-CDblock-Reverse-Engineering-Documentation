@@ -184,8 +184,11 @@ flowchart TD
 - The interface setup at `startup_interface_setup` (`0x07e0`) writes 0 to `0x0a00001a`. CDB106
   writes `0x1100` there on boards with the 20-pin drive ([firmware
   revisions](../firmware-revisions.md#drive-strap)).
-- A preliminary stride probe also touches `0x09080000..0x09080001`, past the 512 KB buffer. How the
-  board decodes that address is unknown.
+- `startup_bsc` (`0x0574`) sets the bus state controller for the buffer DRAM and the interface chip
+  ([SH7034 notes](../sh7034.md#bus-state-controller)).
+- A preliminary stride probe, `startup_dram_probe` (`0x0708`), starts the DRAM refresh and touches
+  one word every 512 bytes up to `0x09080000..0x09080001`, past the 512 KB buffer. How the board
+  decodes that address is unknown.
 - RAM or interface failures set the diagnostic words at `0x0f000000` and `0x0f000002` and bit 7 of
   the hardware flag `0x0f00027d`, Sega's hardware error bit. Up to three attempts run, and a later
   pass overwrites earlier results. Failure does not stop startup.

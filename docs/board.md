@@ -39,6 +39,8 @@ select pin used for another function.
 
 - The address pins A0..A21 drive the board's `SA0..SA21` lines and the data pins D0..D15 the
   `SDH0..SDH15` bus, which the DRAM and the interface chip share.
+- The firmware's bus settings and the access time of each area are in the
+  [SH7034 notes](sh7034.md#bus-state-controller).
 
 ## Clock, reset and mode
 

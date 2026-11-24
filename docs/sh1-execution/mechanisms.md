@@ -9,7 +9,8 @@ This page describes the firmware mechanisms and how an extension uses them. Addr
 CDB105 (SHA-1 `eb8393058f324e922c11b43709b64fc6ca94ab86`). Such an extension, with a module
 loader, has run on consoles whose drive is replaced by MODE or Fenrir, installed from a disc with
 no card in the slot ([disc bootstrap](#disc-bootstrap)). Custom card hardware is not established
-on a console. No CPU budget or performance gain is known.
+on a console. Module code runs at 2 to 12 cycles an instruction, depending on the kind
+([running speed](#running-speed)). No workload gain is established.
 
 ## Execution model
 
@@ -186,8 +187,10 @@ rescheduling paths. The four software timers deliver delayed messages, not CPU b
 [interrupt messages](../cdblock/kernel.md#posting-from-interrupts) and
 [timers](../cdblock/kernel.md#timers).
 
-This supports using otherwise available processor time for computation. It does not establish
-disc-service latency or an available percentage of the CPU. The worker must:
+This supports using otherwise available processor time for computation. On a console an idle CD
+block leaves a job nearly all of the SH-1, and streaming sectors takes a share of it
+([running speed](#running-speed)). Disc-service latency under a running job is not established.
+The worker must:
 
 - Keep interrupts enabled under the firmware's mask convention.
 - Keep sector-lock sections short. A higher-priority reader can be blocked by a lock the worker
@@ -202,6 +205,46 @@ an actual wait, a valid mailbox class and a free timer slot. The four slots are 
 firmware. Continuous occupation of task 9 also excludes the idle task, whose requirements must be
 accounted for before treating every idle cycle as available.
 
+## Running speed
+
+Module code runs from the buffer DRAM, well below one instruction a cycle. Each instruction there
+is a 16-bit fetch of its own. A load or store outside the code's 512 bytes costs two DRAM row
+changes, one to the data and one back to the code
+([access times](../sh7034.md#access-times), [instruction timing](../sh7034.md#instruction-timing)).
+
+Cycles an instruction, measured on a console whose drive is replaced by MODE, with no card, the
+extension installed from a disc and the drive idle. Each kind ran as a straight block of code in
+the module slot:
+
+| Instructions | Cycles each |
+| --- | --- |
+| Register arithmetic | 2.09 |
+| `MULS.W`, back to back | 3.12 |
+| `BRA` with `NOP` in its slot, each of the two | 2.60 |
+| `BT`, taken | 6.24 |
+| Word load or store, buffer DRAM | 10.2 |
+| Longword load or store, buffer DRAM | 12.2 |
+| Longword load from the buffer DRAM, then an instruction using it, each of the two | 7.19 |
+| Longword load or store, on-chip RAM | 3.12 |
+| Word read of an on-chip register | 5.15 |
+| Word read of an interface chip register | 4.16 |
+
+- The load and store figures match the manuals' timing with the firmware's bus settings, within a
+  few percent.
+- Loads cost the same near the module and at the far end of the buffer, and stores the same as
+  loads.
+- A longword is the cheaper way through DRAM data: 12.2 cycles for four bytes, against 20.4 for
+  two words.
+- With the drive idle, a job's elapsed time stays within 2% of what its instructions cost. While
+  the drive streams sectors into a partition, at about 140 a second, the same jobs take up to 12%
+  longer. When the host also takes those sectors through the data port, they take 12 to 21%
+  longer.
+- In the [demo]'s benchmark on the same console, the SH-1 decodes its PRS stream at about 36
+  sectors a second, below the drive's rate. The run that hands it the decode takes 30.1 s, against
+  21.9 s for the master alone.
+- The cost of a data port word to the SH-2, and the effect of a job on disc-service latency, are
+  not measured. Other drives are not measured.
+
 ## Code, data and buffer ownership
 
 A host sequence is `64` (Put Sector Data), transfer, `06` (End Data Transfer), submit,
@@ -214,7 +257,8 @@ through CS6 and repeats every 512 KB ([MPEG card](../board.md#mpeg-card)), and t
 loader decodes only the length its first longword gives. Whatever the ROM holds after that stays
 readable, so the resident can copy a module from there into its own RAM whenever a job needs it.
 The known cards never read the ROM themselves ([card code](../mpeg-card/sh1-code.md)), and `E2`
-copies card ROM into sector slots instead. CS6 read timing on a console is not known.
+copies card ROM into sector slots instead. The firmware's bus settings give a card ROM read 5
+states ([access times](../sh7034.md#access-times)). It is not measured on a console.
 
 Input can also come from the disc. A read connected to a filter files its sectors into a partition,
 and the job reads them there, so only the output crosses to the host. Where a sector's data starts
@@ -334,8 +378,9 @@ and job handles, abort outstanding work and rediscover the extension after state
   modules have run so on all four, and the other examples' card ROMs load and turn on with each
   ([example status][emulator-examples-status]). Internal routines and other firmware state still
   need revision-specific treatment.
-- Transfer cost, available compute time and effects on disc latency require hardware measurements.
-  A compute-heavy job with reusable inputs may be suitable, but no workload speedup is established.
+- Transfer cost and effects on disc latency require hardware measurements. Compute time is
+  measured ([running speed](#running-speed)). A compute-heavy job with reusable inputs may be
+  suitable, but no workload speedup is established.
 
 The disc-extension loader is the way in without card hardware, but only for a disc the firmware
 accepts ([disc bootstrap](#disc-bootstrap)). `E2` retrieves card ROM into sector buffers and is not
