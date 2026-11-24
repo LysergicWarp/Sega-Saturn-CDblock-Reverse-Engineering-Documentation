@@ -212,9 +212,9 @@ is a 16-bit fetch of its own. A load or store outside the code's 512 bytes costs
 changes, one to the data and one back to the code
 ([access times](../sh7034.md#access-times), [instruction timing](../sh7034.md#instruction-timing)).
 
-Cycles an instruction, measured on a console whose drive is replaced by MODE, with no card, the
-extension installed from a disc and the drive idle. Each kind ran as a straight block of code in
-the module slot:
+Cycles an instruction, measured by the [demo]'s `disc-sh1-timing` on a console whose drive is
+replaced by MODE, with no card, the extension installed from a disc and the drive idle. Each kind
+ran as a straight block of code in the module slot:
 
 | Instructions | Cycles each |
 | --- | --- |

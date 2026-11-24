@@ -573,13 +573,15 @@ python emulator/scripts/ring/ring.py cdb105.bin emulator/scripts/ring/full-check
 ## Executing SH-1 code from the SH-2
 
 The [example code][emulator-examples-status] has run only in emulation. The
-[CD-block SH-1 demo][demo] takes it further: a card firmware in assembly and in C, four modules, an
+[CD-block SH-1 demo][demo] takes it further: a card firmware in assembly and in C, five modules, an
 SH-2 client, and discs whose SH-2 programs run jobs on the SH-1. It runs in a
 [fork of Beetle Saturn][beetle-fork] with the emulator as its CD block. Its scroller disc
 without the card also runs on consoles whose drive is replaced by MODE or Fenrir. There a disc
 extension installs the assembly card firmware with no card in the slot, the firmware loads a cipher
 module, and the SH-1 decrypts the picture's strips as the drive streams them
-([disc bootstrap](docs/sh1-execution/mechanisms.md#disc-bootstrap)).
+([disc bootstrap](docs/sh1-execution/mechanisms.md#disc-bootstrap)). Its timing disc measures, the
+same way, how fast the SH-1 runs a module's code
+([running speed](docs/sh1-execution/mechanisms.md#running-speed)).
 
 A card extension of one's own takes jobs from the SH-2 and runs them on the SH-1 in task 9, which
 runs the card checks and the card work loop. The SH-2 puts the inputs into the sector buffer with
