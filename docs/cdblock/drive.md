@@ -163,6 +163,8 @@ python scripts/drive-link/link.py scripts/drive-link/checksum.txt
   packet already at `0x0f000304` and leaves a staged command pending.
 - Yabause's drive emulation builds its frames the same way: 11 bytes, their inverted sum and a
   13th byte of 0 ([references](../references.md#drive-emulation)).
+- The reference drive sends its frames this way too. Both sums match and its final byte is `00` in
+  every frame of a startup without a disc.
 
 ## Reports
 
@@ -205,6 +207,10 @@ position. The ring seek report uses the same bytes differently.
 The names describe what the firmware does with each code. Codes 1 and 2 keep Yabause's names,
 since the firmware shows nothing more about them ([references](../references.md#drive-emulation)).
 Codes 3 and 5 are errors while the TOC is read.
+
+- The reference drive also sends code 0 without a position, as `02`, while it searches for a disc
+  after the lid closes ([a lid close](#a-lid-close-without-a-disc)).
+- Its reports `80`, `83`, `12` and `02` carry `00` in bytes 1..10.
 
 ## Commands
 
@@ -293,7 +299,8 @@ flowchart TD
     first -->|"80, 81"| tray["Drive states 18, 17"]
     first -->|"83"| nodisc["Drive state 20: no disc"]
     tray -->|"82, or a request"| toc19["Command 03, drive state 19"]
-    nodisc -->|"A request: command 0c"| tray
+    tray -->|"Other reports"| toc
+    nodisc -->|"80, 81, or a request: command 0c"| tray
     nodisc -->|"82"| toc
     toc19 --> toc
     toc --> collect["Lead-in reports: toc_collect 0x3858"]
@@ -351,6 +358,21 @@ Drive states 17..22 use the table at `task6_drive_state_table` (`0x2818`): 17 an
 | 4 | In drive state 22, the seek after the TOC settled at `drive_startup_seek_done` (`0x3a84`) |
 | 9 | `toc_end_reported` (`0x39ec`): the TOC ends with the sessions read so far |
 | Other | Periodic status only |
+
+### A lid close without a disc
+
+The reference drive, powered on with the lid open and no disc, then closed, gives this sequence.
+Times are rounded to 0.1 s.
+
+| When | Report | Command | Task 6 |
+| --- | --- | --- | --- |
+| 1.2 s after power-on | `80` | Null | First report: drive state 18, host status 6 |
+| The lid closes | `12` | Null | Status code 1 is another report in drive state 18: command `03` staged, drive state 21 |
+| The next frame | `12` | `03 01 00 00 00 00 00 00 00 00 02` | The TOC read, session 1, byte 10 = 2. Sent once |
+| The next 3.2 s | `02` | Null | The drive searches for a disc. Status code 0 runs `toc_collect`, which takes none of these reports: status bit 2 is clear |
+| Then | `83` | Null | No disc: drive state 20, host status 7 |
+
+The drive never sent `81` or `82`.
 
 ### The TOC
 
@@ -824,6 +846,19 @@ the strobe handler, the sector pulse lock and the 20 seconds disc authentication
   moves at least, each with its sectors. A ring seek tried again or a read sent again adds a move.
   With none repeated, each move has a little under 2.5 s.
 
+### Frames on the reference drive
+
+The reference drive starts a frame every 16.6 ms, about 60 a second, with the tray open, while it
+searches for a disc and with no disc. With a disc turning the rate is not measured. Times are
+rounded to 0.1 s.
+
+- `RESET` rises 0.8 s after power-on. The drive starts framing 0.1 s later.
+- Its first frames, about 20, carry `COMSYNC` and one strobe each, with no clock. The link is
+  served only once task 6 has set up SCI0 and the strobe capture ([link](#link)).
+- The first clocked frame comes 0.4 s after `RESET` rises.
+- At 1/60 s the drive sends fewer frames than one per sector period, which the ranges below
+  assume.
+
 ### Ranges in theory
 
 Within those limits, how much timing the firmware tolerates depends on how the drive behaves. The
@@ -870,7 +905,7 @@ the firmware was written is not known, nor where real drives fall inside them.
 - What commands `05` and `0c` do in the drive.
 - What status bit 2 and status bit 3 mean. Bit 3 is counted separately for the lead-in reports that
   disc authentication weighs.
-- How often the drive strobes and starts frames.
+- How often the drive strobes, and how often it starts frames with a disc turning.
 
 [emulator]: https://github.com/LysergicWarp/Sega-Saturn-CDB-Emulator
 [emulator-seeks.txt]: https://github.com/LysergicWarp/Sega-Saturn-CDB-Emulator/blob/main/scripts/ring/seeks.txt
